@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from taskApp.auth.routes import router as auth_router
+from taskApp.tasks.routes import router as task_router
 from .db import Base, engine,SessionLocal
 from .models import User
 from taskApp.auth.utils import hash_password
@@ -34,6 +35,7 @@ create_admin_user()
 
 # Include routes
 app.include_router(auth_router, prefix="/api/v1", tags=["auth"])
+app.include_router(task_router, prefix="/api/v1", tags=["task"])
 
 if __name__ == "__main__":
     uvicorn.run("main:app",host="0.0.0.0",port=8080,reload=True)
