@@ -34,7 +34,8 @@ class Task(Base):
     description = Column(Text, nullable=False)
     status = Column(String, default="Pending") 
     rating = Column(Float, nullable=True)  
-    comments = Column(Text, nullable=True)  
+    comments = Column(Text, nullable=True) 
+    details = Column(Text, nullable=True) 
     due_date = Column(Date, nullable=False)
     created_at = Column(Date, default=date.today)
 

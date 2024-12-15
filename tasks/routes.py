@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 from typing import List
 from datetime import date
 from taskApp.auth.dependencies import get_db, get_current_user
-from .schemas import TaskCreate, TaskResponse,UserTasksResponse,AdminTasksResponse
-from .crud import create_task,get_tasks_for_user_by_date,get_tasks_for_admin_by_date
+from .schemas import *
+from .crud import *
 from ..models import User
 
 router = APIRouter()
@@ -79,5 +79,71 @@ def get_admin_tasks(
         ],
     }
 
+@router.post("/{task_id}/review/", response_model=TaskReviewResponse, status_code=status.HTTP_200_OK)
+def review_task_endpoint(
+    task_id: int,
+    review: TaskReview,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Admin reviews a task by providing a rating and comments.
+    """
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can review tasks")
+    
+    task = review_task(db, task_id, review.rating, review.comments)
+    return {
+        "message": "Task reviewed successfully",
+        "task_id": task.id,
+        "rating": task.rating,
+        "comments": task.comments,
+    }
 
+@router.put("/{task_id}/status/", response_model=TaskStatusResponse, status_code=status.HTTP_200_OK)
+def update_task_status_endpoint(
+    task_id: int,
+    status_update: TaskStatusUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Update the status of a task assigned to the current user.
+    """
+    if current_user.role != "user":
+        raise HTTPException(status_code=403, detail="Only users can update task status")
+    
+    updated_task = update_task_status(
+        db,
+        task_id=task_id,
+        user_id=current_user.id,
+        status=status_update.status,
+        details=status_update.details,
+    )
+    return {
+        "message": "Task status updated successfully",
+        "task_id": updated_task.id,
+        "status": updated_task.status,
+        "details": updated_task.details,
+    }
 
+@router.post("/self-task/", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
+def create_self_task_endpoint(
+    self_task: SelfTaskCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Endpoint for users to create a self-task if no tasks are assigned for the given date.
+    """
+    if current_user.role != "user":
+        raise HTTPException(status_code=403, detail="Only users can create self-tasks")
+
+    created_task = create_self_task(
+        db, 
+        user_id=current_user.id, 
+        title=self_task.title, 
+        description=self_task.description, 
+        date=self_task.date
+    )
+    return created_task

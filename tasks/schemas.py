@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import date,datetime
 
@@ -61,4 +61,27 @@ class UserTasksResponse(BaseModel):
     tasks: List[TaskResponse]
 
     class Config:
-        from_attributes = True        
+        from_attributes = True   
+
+class TaskReview(BaseModel):
+    rating: int = Field(..., ge=1, le=5, description="Rating should be between 1 and 5")
+    comments: str = Field(..., max_length=255, description="Comments about the task")
+
+class TaskReviewResponse(BaseModel):
+    message: str
+    task_id: int
+    rating: int
+    comments: str
+
+class TaskStatusUpdate(BaseModel):
+    status: str = Field(..., regex="^(pending|in-progress|completed)$", description="Valid status values are 'pending', 'in-progress', or 'completed'")
+    details: Optional[str] = Field(None, max_length=255, description="Additional details about the status update")
+
+class TaskStatusResponse(BaseModel):
+    message: str
+    task_id: int
+    status: str
+    details: Optional[str]
+
+    class Config:
+        from_attributes = True
